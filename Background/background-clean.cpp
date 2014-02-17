@@ -129,17 +129,15 @@ int main(int argc, char *argv[])
                     CamShiftTracker CSTracker;
                     CSTracker.track(frame, boundRect[i], vmin, vmax, smin);
 
-                    if( backProjMode )
-                        cvtColor(CSTracker.getBackProjection(), frame, CV_GRAY2BGR );
+                    //if( backProjMode )
+                    //    cvtColor(CSTracker.getBackProjection(), frame, CV_GRAY2BGR );
 
-                    //ellipse(frame, CSTracker.getTrackBox(), Scalar(0,0,255), 3, CV_AA );
+                    ellipse(frame, CSTracker.getTrackBox(), Scalar(0,0,255), 3, CV_AA );
                     Point2f rect_points[4];
                     RotatedRect trackBox = CSTracker.getTrackBox();
                     trackBox.points( rect_points );
                     for( int j = 0; j < 4; j++ )
                         line( frame, rect_points[j], rect_points[(j+1)%4], color, 2, CV_AA );
-
-
                 }
 
                 // -------------------------

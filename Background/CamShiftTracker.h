@@ -10,7 +10,7 @@ using namespace std;
 class CamShiftTracker 
 {
     private:
-        Mat hist_img = Mat::zeros(200, 320, CV_8UC3);
+        Mat hist_img;  //= Mat::zeros(200, 320, CV_8UC3);
         Mat back_proj;
 
         int hsize;
@@ -40,6 +40,7 @@ CamShiftTracker::CamShiftTracker()
 {
     hsize = 16;
     float hranges[] = {0,180};
+    float sranges[] = { 0, 256 };
     phranges = hranges;
     hist_img = Mat::zeros(200, 320, CV_8UC3);
 }
@@ -64,6 +65,7 @@ void CamShiftTracker::track(Mat frame, Rect selection, int vmin, int vmax, int s
     mixChannels(&hsv, 1, &hue, 1, ch, 1);
 
     Mat roi(hue, selection), maskroi(mask, selection);
+    //calcHist(&roi, 1, 0, maskroi, hist, 1, &hsize, &phranges);
     calcHist(&roi, 1, 0, maskroi, hist, 1, &hsize, &phranges);
     normalize(hist, hist, 0, 255, CV_MINMAX);
 
