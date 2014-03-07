@@ -8,9 +8,9 @@
 using namespace cv;
 using namespace std;
 
-#define MIN_DIST 100
-#define MIN_TIME 15
-#define MAX_TIME 50
+#define MIN_DIST 1000
+#define MIN_TIME 2
+#define MAX_TIME 10
 
 int parking_count = 0;
 bool traceParking = false;
@@ -50,10 +50,10 @@ void onMouse( int event, int x, int y, int flags, void* param )
 
 KalmanFilter* CreateKF()
 {
-	KalmanFilter* KF = new KalmanFilter(2, 2, 2);
+	KalmanFilter* KF = new KalmanFilter(4, 2, 0);
+	KF->transitionMatrix = *(Mat_<float>(4, 4) << 1,0,1,0,   0,1,0,1,  0,0,1,0,  0,0,0,1);	
 	
-	
-	return KF;
+    return KF;
 }
 
 /*
@@ -234,10 +234,12 @@ int main(int argc, char *argv[])
                 
                     bool isClose = false;
                     for (unsigned int i = 0; i < cars.size(); i++) {
-                        double d = getDistance(cars[i].rect, temp);
-                        if (d < MIN_DIST && cars[i].time < MIN_TIME){
+                        //double d = getDistance(cars[i].rect, temp);
+                        //if (d < MIN_DIST && cars[i].time < MIN_TIME){
+                        Rect inter = cars[i].rect.boundingRect() | temp.boundingRect();
+                        if ( inter.area() > 80000 ){ 
                             isClose = true;
-                            cars[i].rect = temp;
+                            //cars[i].rect = temp;
                             break;
                         }
                         
@@ -248,9 +250,9 @@ int main(int argc, char *argv[])
                         candidate.rect = temp;
                         candidate.color = color;
                         candidate.time = 0;
-                        candidate.KF = CreateKF();
-                        candidate.measurement(0, 0);
-                        candidate.measurement.setTo(Scalar(0));
+                        //candidate.KF = CreateKF();
+                        //candidate.measurement(0, 0);
+                        //candidate.measurement.setTo(Scalar(0));
                         cars.push_back(candidate);
                     }
                 }
@@ -258,25 +260,40 @@ int main(int argc, char *argv[])
             }
         }
 
+/*
+        for (int i=0; i < cars.size(); i++)
+        {
+            for (int j=0; j < cars.size(); j++)
+            {
+                Rect inter = cars[i].rect.boundingRect() | cars[j].rect.boundingRect();
+                if (intr.area() <= 10000)
+                {
+                    
+                }
+            }
+        }
+*/
+
         // Drawing tracked object
         //cout << cars.size() << " ";
         for(unsigned int i = 0; i <cars.size(); i++)
         {
-            if (cars[i].time < MIN_TIME)
+            if (cars[i].time < MAX_TIME)
             {
                 ellipse(image, cars[i].rect, cars[i].color, 2, CV_AA);
+                rectangle(image,  cars[i].rect.boundingRect(),cars[i].color);
                 // First predict, to update the internal statePre variable
-				Mat prediction = cars[i].KF->predict();
+				//Mat prediction = cars[i].KF->predict();
 				//Point predictPt(prediction.at<float>(0),prediction.at<float>(1));
 							 
 				// 
-				cars[i].measurement(0) = cars[i].rect.center.x;
-				cars[i].measurement(1) = cars[i].rect.center.y;
+				//cars[i].measurement(0) = cars[i].rect.center.x;
+				//cars[i].measurement(1) = cars[i].rect.center.y;
 							 
-				Point measPt(cars[i].measurement(0), cars[i].measurement(1));
+				//Point measPt(cars[i].measurement(0), cars[i].measurement(1));
 				 
 				// The "correct" phase that is going to use the predicted value and our measurement
-				Mat estimated = cars[i].KF->correct(cars[i].measurement);
+				//Mat estimated = cars[i].KF->correct(cars[i].measurement);
 				//Point statePt(estimated.at<float>(0),estimated.at<float>(1));
 				
 				//cout << "prediction point: " << predictPt << "state point: " << statePt << "\n";
