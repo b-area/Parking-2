@@ -1,0 +1,272 @@
+%==============================================================================
+%== template for LATEX poster =================================================
+%==============================================================================
+%
+%--A0 beamer slide-------------------------------------------------------------
+\documentclass[final]{beamer} % use beamer
+\usepackage[orientation=landscape,
+            size=a0,          % poster size
+            scale=1.2         % font scale factor
+           ]{beamerposter}    % beamer in poster size
+%
+%--some needed packages--------------------------------------------------------
+\usepackage[american]{babel}  % language 
+\usepackage[utf8]{inputenc}   % std linux encoding
+
+%
+
+% ===========================================================================
+% ==  The poster style ======================================================
+% ===========================================================================
+\usetheme{SCI}    % our poster style
+%--set colors for blocks (without frame)---------------------------------------
+  \setbeamercolor{block title}{fg=ngreen,bg=white}
+  \setbeamercolor{block body}{fg=black,bg=white}
+%--set colors for alerted blocks (with frame)----------------------------------
+%--textcolor = fg, backgroundcolor = bg, dblue is the jacobs blue
+  \setbeamercolor{block alerted title}{fg=white,bg=dblue!70}%frame color
+  \setbeamercolor{block alerted body}{fg=black,bg=dblue!10}%body color
+%
+
+% ==========================================================================
+% ==Title, date and authors of the poster===================================
+% ==========================================================================
+\title{Applying Na\"{i}ve Bayes Classifier in the Natural Language Toolkit \\
+to classify recent tweets.}
+\author{Calvin Canada and Eddy C. Borera}
+\institute[Jacobs University]
+          {School of Computing and Informatics, Lipscomb University,
+           One University Park Dr., Nashville, TN}
+\date{\today}
+%
+%==some usefull qm commands====================================================
+%  |x>
+\newcommand{\ket}[1]{\left\vert#1\right\rangle}
+%  <x|
+\newcommand{\bra}[1]{\left\langle#1\right\vert}
+%  <x|y>
+\newcommand{\braket}[2]{\left< #1 \vphantom{#2}\,
+                        \right\vert\left.\!\vphantom{#1} #2 \right>}
+%  <x|a|y>
+\newcommand{\sandwich}[3]{\left< #1 \vphantom{#2 #3} \right|
+                          #2 \left|\vphantom{#1 #2} #3 \right>}
+%  d/dt
+\newcommand{\ddt}{\frac{d}{dt}}
+%  D/Dx
+\newcommand{\pdd}[1]{\frac{\partial}{\partial#1}}
+%  |x|
+\newcommand{\abs}[1]{\left\vert#1\right\vert}
+%  k_{x}
+\newcommand{\kv}[1]{\mathbf{k}_{#1}}
+
+% ========================
+% Handy commands (Eddy)
+% ========================
+\newcommand{\argmax}{\operatornamewithlimits{argmax}}
+
+%==============================================================================
+%==the poster content==========================================================
+%==============================================================================
+\begin{document}
+%--the poster is one beamer frame, so we have to start with:
+
+\begin{frame}[t]
+%--to seperate the poster in columns we can use the columns environment
+ \begin{columns}[t] % the [t] options aligns the columns content at the top
+ 
+  % ----------------------------------------------------------
+  % -- the left column----------------------------------------
+  % ----------------------------------------------------------
+  \begin{column}{0.28\paperwidth}% the right size for a 3-column layout     
+  	
+  	%-- abstract block ------------
+   	\begin{alertblock}{Abstract}
+   	Natural Language Processing has been widely used to extract 
+   	meaningful information from human language that appears in phone 
+   	dialogues, newspaper stories, emails, product manuals, etc... 
+   	It has been successfully applied in word editors to check and correct 
+   	spelling errors, in email applications to detect spams, and in spoken 
+   	dialogue system to translate spoken words into texts and vice versa. 
+   	In this research, we combine Natural Language Processing with machine 
+   	learning techniques to classify tweets as either sad, happy, or neutral. 
+   	The ability to classify tweets could be considered a useful resource for 
+   	companies and organizations to track reactions of the mass or specific 
+   	targeted consumers regarding their products or recently published statements. 
+   	In our work, we designed feature functions for the Natural Language Toolkit 
+   	framework, written in Python, and applied them to a Na\"{i}ve Bayes Classifier 
+   	to classify recent tweets retrieved from the Twitterarchivist.com website. 
+   	Randomly selected training data are fed in to the classifier before testing 
+   	the overall classification model on randomly sampled test tweets. We analyze 
+   	the classification accuracy results to determine if further modifications 
+   	are needed in feature functions.
+   \end{alertblock}
+	
+
+	\setbeamercolor{block alerted title}{fg=black,bg=nred}%frame color
+   	\setbeamercolor{block alerted body}{fg=black,bg=white}%body color
+   	\begin{alertblock}{Introduction}
+    		Natural Language Toolkit (NLTK) is a platform that can be used to work 
+    with data that deals with managing human language. NLTK contains many classifiers, 
+    one of which is the Naive Bayes classifier which is the one that we have implemented.
+    The Naive Bayes classifier is a classifier that was built using the Na\"{i}ve Bayes
+    algorithm as the cornerstone method of classifying. NLTK has been described as a
+    practical introduction to programming for language processing. Many have used this
+    classifier to perform actions such as sort through Spam, translate languages, and
+    construct sentences in a given language. We combined this wonderful tool with the
+    Python programming language to enable us to interpret and classify human language
+    statements using Twitter data. We start by collecting data which we then divide into a
+    train set and a test set. The train set is used to train the classifier, while the
+    test set is fed to the classifier after this process to determine the accuracy of the
+    our classifier.
+   	\end{alertblock}
+    \vskip2ex
+
+
+	% ---------------------------------------
+  	% -------------- References -------------
+  	% ---------------------------------------
+   	\begin{block}{References}
+    		\begin{thebibliography}{7}
+     		{\small %small is better for refs
+       			\bibitem{bposter}
+       			\url{http://www-i6.informatik.rwth-aachen.de/
+                   ~dreuw/latexbeamerposter.php}
+       			\bibitem{beamerdoc}
+       			\url{http://www.ctan.org/tex-archive/
+                   macros/latex/contrib/beamer/doc/beameruserguide.pdf}
+       			\bibitem{pgf}
+       			\url{http://www.ctan.org/tex-archive/help/Catalogue/entries/pgf.html}
+     		}
+    		\end{thebibliography}
+   \end{block}
+   \vskip2ex   
+   
+  \end{column}
+  
+  
+  % -------------------------------------------------------------
+  % ---------- Introduction (One Big Right Column) --------------
+  % -------------------------------------------------------------
+  \begin{column}{0.60\paperwidth} %thats the big right column
+   
+   \begin{block}{Introduction}
+    Natural Language Toolkit (NLTK) is a platform that can be used to work 
+    with data that deals with managing human language. NLTK contains many classifiers, 
+    one of which is the Naive Bayes classifier which is the one that we have implemented.
+    The Naive Bayes classifier is a classifier that was built using the Na\"{i}ve Bayes
+    algorithm as the cornerstone method of classifying. NLTK has been described as a
+    practical introduction to programming for language processing. Many have used this
+    classifier to perform actions such as sort through Spam, translate languages, and
+    construct sentences in a given language. We combined this wonderful tool with the
+    Python programming language to enable us to interpret and classify human language
+    statements using Twitter data. We start by collecting data which we then divide into a
+    train set and a test set. The train set is used to train the classifier, while the
+    test set is fed to the classifier after this process to determine the accuracy of the
+    our classifier.
+	\end{block}
+	\vskip2ex
+   
+
+  	%--begin new columns to get alignment on top------------------------------------
+ 	\begin{columns}[t,totalwidth=0.60\paperwidth]
+          		
+  		\begin{column}{0.28\paperwidth}
+			%------red block--------------------------------------
+   			\setbeamercolor{block alerted title}{fg=black,bg=nred}%frame color
+   			\setbeamercolor{block alerted body}{fg=black,bg=white}%body color
+   			\begin{alertblock}{nred}
+    		
+   			\end{alertblock}
+			
+			%--orange block----------------------------------------
+   			\setbeamercolor{block alerted title}{fg=black,bg=norange}%frame color
+   			\setbeamercolor{block alerted body}{fg=black,bg=white}%body color
+   			\begin{alertblock}{Na\"{i}ve Bayes Classifier}
+	 			\begin{definition}[NBC]
+	   				 Na\"{i}ve Bayes Classifier (NBC) is a supervised learning technique 
+	   				that is based on the Bayes' Theorem. A document is classified
+	   				by taking the most probable class label given a set of feature 
+	   				values (\emph{maximum likelihood}).
+    				\end{definition}
+    				
+    				Given a set of feature values $\left(f_1, f_2, \ldots, f_n \right)$, 
+				the likelihood of a document to be in  a class label $c$ is computed 
+				by the following equation:
+				\begin{eqnarray}
+					Pr(c \mid f_1, \ldots , f_n) & = & \frac{Pr(f_1, \ldots , f_n \mid c)
+					                           Pr(c)}{Pr(f_1, \ldots , f_n)}  \nonumber \\
+					&  & \nonumber \\
+					& = &  \frac{Pr(c) \prod_{i=1}^{n} Pr(f_i \mid c)}{Pr(f_1, \ldots ,f_n)} \nonumber \\
+			       & = &  \frac{Pr(c) \left[Pr(f_1 \mid c) \times \ldots \times Pr(f_n \mid c) \right] }{Pr(f_1, \ldots ,f_n)} \nonumber 
+				\end{eqnarray}
+					
+				Then, the most likely class is determined by the following equation:
+				\begin{eqnarray}
+					\argmax_{c} Pr(c \mid f_1, \ldots , f_n) & = &  \argmax_{c} \frac{Pr(c) \prod_{i=1}^{n} Pr(f_i \mid c)}{Pr(f_1, \ldots ,f_n)} \nonumber \\
+					& = &  \argmax_{c} Pr(c) \prod_{i=1}^{n} Pr(f_i \mid c) \nonumber
+				\end{eqnarray}
+    				
+   			\end{alertblock}
+  	\end{column}
+  
+	%--right column-----------------------------------------------------------------
+  	\begin{column}{0.28\paperwidth}
+		%--yellow block-----------------------------------------------------------------
+   		\setbeamercolor{block alerted title}{fg=black,bg=nyellow}%frame color
+   		\setbeamercolor{block alerted body}{fg=black,bg=white}%body color
+   		\begin{alertblock}{NLTK}
+    				Natural Language Toolkit (NLTK) is a platform that can be used to work 
+    with data that deals with managing human language. NLTK contains many classifiers, 
+    one of which is the Naive Bayes classifier which is the one that we have implemented
+   		\end{alertblock}
+		
+		% ------------ Experiments --------------------------
+   		\setbeamercolor{block alerted title}{fg=black,bg=ngreen}%frame color
+   		\setbeamercolor{block alerted body}{fg=black,bg=white}%body color
+   		\begin{alertblock}{Experiments}
+    			
+   		\end{alertblock}
+   		
+   		% ------------ Results --------------------------
+   		\setbeamercolor{block alerted title}{fg=black,bg=dpurple}%frame color
+   		\setbeamercolor{block alerted body}{fg=black,bg=white}%body color
+   		\begin{alertblock}{Results}
+    			
+   		\end{alertblock}
+   		
+   		
+   		\setbeamercolor{block alerted title}{fg=black,bg=dblue}%frame color
+   		\setbeamercolor{block alerted body}{fg=black,bg=white}%body color
+   		
+   	\end{column}
+   
+  \end{columns}
+  \vskip3ex  
+  
+  \begin{alertblock}{Conclusion}
+    As you can see it is possible to make your poster very colorfull. But in 
+    most cases this will this will overload your poster. If you don't change 
+    the color settings you will get the default look, which consits of some
+    shades of the jacobs blue and some decent green highlights. These colors 
+    where chosen carefully to keep a consistent look of the poster. The 
+    \emph{cpbgposter} style is installed our office computers, so you should be
+    able to compile this example out of the box with pdflatex. If you want to
+    work on your computer make sure that you have a recent TeX distribution 
+    (TeXlive 2008, Miktex) and download the beamerthemecpbgposter.sty file from
+    our teamwork page and put it in your local TeX directory.
+
+% guess what this command is god for!
+    \makeruleinbox
+% it works, but causes some underfull/overfull \hbox warnings
+    \begin{center}
+     {\huge\vskip-1ex
+     {\color{nred}H}{\color{norange}a}{\color{nyellow}p}
+     {\color{ngreen}p}{\color{dblue}y}\\
+     \TeX'ing!}
+    \end{center}
+   \end{alertblock}
+  
+  \end{column}
+ \end{columns}
+\end{frame}
+\end{document}
