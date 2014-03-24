@@ -134,7 +134,7 @@ RotatedRect tracking(Mat &image, Rect region, Mat& hist, Mat &backproj, Mat& hue
 
     calcBackProject(&hue, 1, 0, hist, backproj, &phranges);
     backproj &= mask;
-    RotatedRect trackBox = CamShift(backproj, trackWindow, TermCriteria( CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 10, 1 ));
+    RotatedRect trackBox = CamShift(backproj, trackWindow,TermCriteria( CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 10, 1 ));
     trackBox.angle = 90-trackBox.angle;
 
     if( backProjMode )
