@@ -20,7 +20,8 @@ int trackObject = 0;
 
 vector<Point> parking; // polygon that enclose a parking space;
 
-typedef struct Car {
+typedef struct Car 
+{
     RotatedRect rect;
     Scalar color;
     int time;
@@ -90,9 +91,11 @@ int getClosestCar(RotatedRect roi, vector<Car> list)
 {
     double min = INFINITY;
     int index = 0;
-    for(unsigned int i = 0; i < list.size(); i++) {
+    for(unsigned int i = 0; i < list.size(); i++) 
+    {
         double d = getDistance(roi, list[i].rect);
-        if (d < min) {
+        if (d < min) 
+        {
             min = d;
             index = i;
         }
@@ -177,6 +180,9 @@ int main(int argc, char *argv[])
     vector<Car> cars;
     vector<KalmanFilter> KFList;
 
+    vector<Rect> selections;
+    bool isTracking = false;
+
     for(;;)
     {
         cap >> frame;
@@ -194,6 +200,7 @@ int main(int argc, char *argv[])
         vector<Point2f>center( contours.size() );
         vector<float>radius( contours.size() );
 
+        // Get the rectangle
         for( unsigned int i = 0; i< contours.size(); i++ )
         {
             Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
@@ -203,104 +210,49 @@ int main(int argc, char *argv[])
             double area = boundRect[i].area();
             if (area > 10000)
             {
-
-                // Track if an object of interest has crossed a roi
-                Point2f center(boundRect[i].x + boundRect[i].width/2.0, boundRect[i].y + boundRect[i].height/2.0);
-
-                // Test if the center of a contour has crossed ROI (direction: going in or out)
-                if (parking.size() > 3)
+                if (trackObject)
                 {
-                    dist2Center = pointPolygonTest(parking, center, true);
-                }
-                //cout << center << "is " << dist2Center << " distance from the contour. \n"; 
-                putText(frame, "I", center, FONT_HERSHEY_COMPLEX_SMALL, 1.5, color, 1);
-                rectangle(frame, boundRect[i].tl(), boundRect[i].br(), Scalar(100, 100, 200), 2, CV_AA);
+                    if (selections.size() <= 5) 
+                    {
+                        cout << "Adding cars to be tracked \n";
+                        selections.push_back(boundRect[i]);
 
-                if( trackObject)
-                {
-                    int _vmin = vmin, _vmax = vmax;
-
-                    inRange(hsv, Scalar(0, smin, MIN(_vmin,_vmax)),
-                            Scalar(180, 256, MAX(_vmin, _vmax)), mask);
-                    int ch[] = {0, 0};
-                    hue.create(hsv.size(), hsv.depth());
-                    mixChannels(&hsv, 1, &hue, 1, ch, 1);
-
-                    Mat roi(hue, boundRect[i]), maskroi(mask, boundRect[i]);
-                    calcHist(&roi, 1, 0, maskroi, hist, 1, &hsize, &phranges);
-                    normalize(hist, hist, 0, 255, CV_MINMAX);
-
-                    RotatedRect temp = tracking(image, boundRect[i], hist, backproj, hue, mask, phranges);                    
-                
-                    bool isClose = false;
-                    for (unsigned int i = 0; i < cars.size(); i++) {
-                        //double d = getDistance(cars[i].rect, temp);
-                        //if (d < MIN_DIST && cars[i].time < MIN_TIME){
-                        Rect inter = cars[i].rect.boundingRect() | temp.boundingRect();
-                        if ( inter.area() > 80000 ){ 
-                            isClose = true;
-                            //cars[i].rect = temp;
-                            break;
-                        }
-                        
-                    }
-
-                    if (!isClose) {
                         Car candidate;
-                        candidate.rect = temp;
                         candidate.color = color;
                         candidate.time = 0;
-                        //candidate.KF = CreateKF();
-                        //candidate.measurement(0, 0);
-                        //candidate.measurement.setTo(Scalar(0));
                         cars.push_back(candidate);
-                    }
-                }
-
+                    } 
+                }  
             }
         }
 
-/*
-        for (int i=0; i < cars.size(); i++)
+        if (trackObject) 
         {
-            for (int j=0; j < cars.size(); j++)
+            int _vmin = vmin, _vmax = vmax;
+            inRange(hsv, Scalar(0, smin, MIN(_vmin,_vmax)),
+            Scalar(180, 256, MAX(_vmin, _vmax)), mask);
+            int ch[] = {0, 0};
+            hue.create(hsv.size(), hsv.depth());
+            mixChannels(&hsv, 1, &hue, 1, ch, 1);
+
+            for (int i=0; i < selections.size(); i++) 
             {
-                Rect inter = cars[i].rect.boundingRect() | cars[j].rect.boundingRect();
-                if (intr.area() <= 10000)
-                {
-                    
-                }
+                Mat roi(hue, selections[i]), maskroi(mask, selections[i]);
+                calcHist(&roi, 1, 0, maskroi, hist, 1, &hsize, &phranges);
+                normalize(hist, hist, 0, 255, CV_MINMAX);
+                //RotatedRect temp = tracking(image, boundRect[i], hist, backproj, hue, mask, phranges); 
+                RotatedRect temp = tracking(image, selections[i], hist, backproj, hue, mask, phranges);  
+                cars[i].time += 1;
+                cars[i].rect = temp;   
             }
         }
-*/
+
 
         // Drawing tracked object
         //cout << cars.size() << " ";
         for(unsigned int i = 0; i <cars.size(); i++)
         {
-            if (cars[i].time < MAX_TIME)
-            {
-                ellipse(image, cars[i].rect, cars[i].color, 2, CV_AA);
-                rectangle(image,  cars[i].rect.boundingRect(),cars[i].color);
-                // First predict, to update the internal statePre variable
-				//Mat prediction = cars[i].KF->predict();
-				//Point predictPt(prediction.at<float>(0),prediction.at<float>(1));
-							 
-				// 
-				//cars[i].measurement(0) = cars[i].rect.center.x;
-				//cars[i].measurement(1) = cars[i].rect.center.y;
-							 
-				//Point measPt(cars[i].measurement(0), cars[i].measurement(1));
-				 
-				// The "correct" phase that is going to use the predicted value and our measurement
-				//Mat estimated = cars[i].KF->correct(cars[i].measurement);
-				//Point statePt(estimated.at<float>(0),estimated.at<float>(1));
-				
-				//cout << "prediction point: " << predictPt << "state point: " << statePt << "\n";
-            }         
-            cars[i].time += 1;
-            if (cars[i].time > MAX_TIME)
-                cars.erase(cars.begin()+i);
+            ellipse(image, cars[i].rect, cars[i].color, 2, CV_AA);
         }
 
         /*
@@ -310,6 +262,7 @@ int main(int argc, char *argv[])
         {
             circle(image, parking[j], 5, Scalar(0,0,255), -1);
         }
+
         drawPaking(image);
 
         imshow("Frame",image);
@@ -319,13 +272,22 @@ int main(int argc, char *argv[])
         char c = (char)waitKey(30);
         if( c == 27 || c == 'q')
             break;
+
         switch(c)
         {
             case 's':
-                traceParking = !traceParking; 
+                traceParking = !traceParking;
+                if (traceParking) 
+                {
+                    cout << "In Parking Tracing mode ...\n";
+                } 
                 break;
             case 't':
                 trackObject = !trackObject;
+                if (trackObject) 
+                {
+                    cout << "In Tracking mode ...\n";
+                }
                 break;
             case 'b':
                 backProjMode = !backProjMode;
