@@ -9,7 +9,7 @@ using namespace cv;
 using namespace std;
 
 #define MIN_DIST 400
-#define MIN_TIME 200
+#define MIN_TIME 75
 
 int parking_count = 0;
 bool traceParking = false;
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
             msg.append(temp.str());
             msg.append(" car(s).");
 
-            putText(image, msg, pt, FONT_HERSHEY_PLAIN, 1.5, Scalar(0, 0, 0), 1.5);
+            putText(image, msg, pt, FONT_HERSHEY_PLAIN, 1.5, Scalar(0, 255, 0), 2);
         }  
 
         if (isKalamanOn) {
