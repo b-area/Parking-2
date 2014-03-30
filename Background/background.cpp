@@ -4,12 +4,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cmath>
+#include <regex.h>
 
 using namespace cv;
 using namespace std;
 
 #define MIN_DIST 400
-#define MIN_TIME 75
+#define MIN_TIME 100
+
+#define MIN_BLOB_AREA 75
+#define MAX_BLOB_AREA 10000
+
+#define MIN_BLOB_INTER_AREA 10
+
+//#define DEBUG_MODE
 
 int parking_count = 0;
 bool traceParking = false;
@@ -17,7 +25,6 @@ bool backProjMode = false;
 bool isKalamanOn = false;
 int vmin = 10, vmax = 256, smin = 30;
 int trackObject = 0;
-
 
 vector<Point> parking; // polygon that enclose a parking space;
 vector<Point> dist;
@@ -33,10 +40,11 @@ typedef struct Car
     KalmanFilter *kalman;
 } Car;
 
-/*
- * Drawing ang getting the rect (polygon) that
- * encircle a parking space.
- */
+
+// -----------------------------------------------
+// Drawing ang getting the rect (polygon) that
+// encircle a parking space.
+// -----------------------------------------------
 void onMouse( int event, int x, int y, int flags, void* param )
 {
     switch( event )
@@ -72,6 +80,10 @@ void onMouse( int event, int x, int y, int flags, void* param )
 }
 
 
+// -------------------------------------
+// Instantiates a kalaman filter object
+// with initial parameters
+// --------------------------------------
 KalmanFilter* createKalmanFilter(Point position)
 {
     KalmanFilter* KF = new KalmanFilter(4, 2, 0);
@@ -83,17 +95,16 @@ KalmanFilter* createKalmanFilter(Point position)
     KF->statePre.at<float>(3) = 0; // dy
 
     setIdentity(KF->processNoiseCov, Scalar::all(1e-4));
-    setIdentity(KF->measurementNoiseCov, Scalar::all(10));
-    //setIdentity(KF->errorCovPost, Scalar::all(.1));
+    setIdentity(KF->measurementNoiseCov, Scalar::all(0.1));
+    setIdentity(KF->errorCovPost, Scalar::all(0.1));
 
     return KF;
 }
 
 
-/*
- * Draw area that is enclosing the parking space.
- *
- */
+// ------------------------------
+// Drawing parking region
+// -------------------------------
 void drawPaking(Mat &img)
 {
     // Draw parking space
@@ -110,6 +121,23 @@ void drawPaking(Mat &img)
 }
 
 
+// ---------------------------------
+// Distance between two rectangles
+//  (Using top left corner)
+// ---------------------------------
+double getDistance(Rect r1, Rect r2)
+{
+    Point2f c1 = r1.tl();
+    Point2f c2 = r2.tl();
+    Point2f diff = c1 - c2;
+
+    return sqrt(diff.x*diff.x + diff.y*diff.y);
+}
+
+// ------------------------------------
+// Distance between two rotated 
+// rectangles. (center point)
+// ------------------------------------
 double getDistance(RotatedRect r1, RotatedRect r2)
 {
     Point2f c1 = r1.center;
@@ -120,6 +148,9 @@ double getDistance(RotatedRect r1, RotatedRect r2)
 }
 
 
+// --------------------------------------
+// The closest Car to an ROI
+// ---------------------------------------
 int getClosestCar(RotatedRect roi, vector<Car> list)
 {
     double min = INFINITY;
@@ -138,9 +169,10 @@ int getClosestCar(RotatedRect roi, vector<Car> list)
 }
 
 
-/*
- *
- */
+// ----------------------------------------
+// Camshift Tracking function:
+//  - Tracks an ROI in an image
+// ----------------------------------------
 RotatedRect tracking(Mat &image, Rect region, Mat& hist, Mat &backproj, Mat& hue, Mat &mask, const float* phranges)
 {
     int hsize = 16;
@@ -177,16 +209,38 @@ RotatedRect tracking(Mat &image, Rect region, Mat& hist, Mat &backproj, Mat& hue
     return trackBox;
 }
 
+bool isInteger(const string & str){
+    return (atoi(str.c_str())); 
+}
+
 
 int main(int argc, char *argv[])
 {
+	if (argc < 1)
+	{
+		cout << "Usage: " << argv[0] << " source" << endl;
+		cout << "\t where source is a 0 ... n for cameras" << endl;
+		cout << "\t OR source is a path/to/video." << endl;
+	}
+
     RNG rng(12345);
     Mat frame;
     Mat back;
     Mat fore;
     Mat image;
-    VideoCapture cap(argv[1]);
-    Rect trackWindow;
+
+    VideoCapture cap;
+
+    if (isInteger(argv[1]))
+    	cap.open(atoi(argv[1]));
+    else
+    	cap.open(argv[1]);
+
+    if(!cap.isOpened()) 
+    {
+    	cout << "Error: Unable to open video source: " << argv[1];
+    	exit(-1);
+    }
 
     const int nmixtures =3;
     const bool bShadowDetection = false;
@@ -208,7 +262,6 @@ int main(int argc, char *argv[])
     createTrackbar( "Smin", "Frame", &smin, 256, 0 );
 
     Mat hsv, hue, mask, hist, histimg = Mat::zeros(200, 320, CV_8UC3), backproj;
-
     vector<Car> cars;
 
     for(;;)
@@ -245,29 +298,56 @@ int main(int argc, char *argv[])
             putText(image, msg, pt, FONT_HERSHEY_PLAIN, 1.5, Scalar(0, 255, 0), 2);
         }
 
-        for( unsigned int i = 0; i< contours.size(); i++ )
+
+        // ------------------------------------
+        // Combining blobs that are very close
+        vector<Rect> blobs;
+        for (unsigned int i = 0; i< contours.size(); i++) 
+        {
+            approxPolyDP( Mat(contours[i]), contours_poly[i], 3, true);
+            Rect r1 = boundingRect ( Mat(contours_poly[i]) );
+            double area = r1.area();
+
+            if (area > MIN_BLOB_AREA)
+            {            	
+            	int isNear = 0;
+            	for (int j=0; j<blobs.size(); j++)
+            	{
+            		Rect ir = r1  & blobs[j];
+            		if (ir.area() > MIN_BLOB_INTER_AREA || getDistance(r1, blobs[i]) < 320) 
+            		{
+            			blobs[j]  |= r1;
+            			isNear = 1;
+            		}
+#ifdef DEBUG_MODE
+            		else 
+            			cout << "Dist: " << getDistance(r1, blobs[i]) << endl;
+#endif
+            	}
+
+            	if(!isNear) {
+            		blobs.push_back(r1);
+            	}
+            }
+
+        }
+
+
+        // ---------------------------------------------------------
+        // Go through combined blobs and track the interesting ones
+        // - avoid tracking too large blobs (only track cars) 
+        for(unsigned int i = 0; i < blobs.size(); i++)
         {
             Scalar color = Scalar( rng.uniform(0, 255), rng.uniform(0,255), rng.uniform(0,255) );
-            approxPolyDP( Mat(contours[i]), contours_poly[i], 3, true);
-            boundRect[i] = boundingRect ( Mat(contours_poly[i]) );
-
-            double area = boundRect[i].area();
-            //cout << "area: " << area << endl;
-            if (area > 65)
+        	boundRect[i] = blobs[i];
+            double area = boundRect[i].area();        
+#ifdef DEBUG_MODE
+            cout << "area: " << area << endl;
+            rectangle(image, blobs[i], color, 1);
+#endif
+            
+            if (area < MAX_BLOB_AREA)
             {
-
-                // Track if an object of interest has crossed a roi
-                Point2f center(boundRect[i].x + boundRect[i].width/2.0, boundRect[i].y + boundRect[i].height/2.0);
-
-                // Test if the center of a contour has crossed ROI (direction: going in or out)
-                if (parking.size() > 3)
-                {
-                    dist2Center = pointPolygonTest(parking, center, true);
-                }
-                //cout << center << "is " << dist2Center << " distance from the contour. \n";
-                //putText(frame, "I", center, FONT_HERSHEY_COMPLEX_SMALL, 1.5, color, 1);
-                //rectangle(frame, boundRect[i], Scalar(255, 0, 0), 2, CV_AA);
-
 
                 if( trackObject)
                 {
@@ -282,29 +362,21 @@ int main(int argc, char *argv[])
                     Mat roi(hue, boundRect[i]), maskroi(mask, boundRect[i]);
                     calcHist(&roi, 1, 0, maskroi, hist, 1, &hsize, &phranges);
                     normalize(hist, hist, 0, 255, CV_MINMAX);
-
                     RotatedRect temp = tracking(image, boundRect[i], hist, backproj, hue, mask, phranges);
-                    //Draws the temp RotatedRect
-                    Point2f vertices[4];
-                    temp.points(vertices);
-                    for (int k = 0; k < 4; k++)
-                    {
-                        line(image, vertices[k], vertices[(k+1)%4], Scalar(255,0,0), 1);
-                    }
+
 
                     bool isClose = false;
-                    //Car closestCar = cars[getClosestCar(temp, cars)];
                     for (unsigned int j = 0; j < cars.size(); j++)
                     {
                         double d = getDistance(cars[j].rect, temp);
                         if (d < MIN_DIST)
                         {
                             isClose = true;
-                            cars[j].rect = temp;
-                            break;
+                            cars[j].rect = temp; // Might want to take union or intersection for better result
                         }
 
                     }
+
 
                     if (!isClose)
                     {
@@ -313,8 +385,8 @@ int main(int argc, char *argv[])
                         candidate.color = color;
                         candidate.time = 0;
                         //cout << "adding car" << endl;    
-                        candidate.kalman = createKalmanFilter(candidate.rect.center);
-                    
+                        //candidate.kalman = createKalmanFilter(candidate.rect.center);
+                        //candidate.bigRectangle = temp.boundingRect();
                         cars.push_back(candidate);
                     }
                 }
@@ -322,11 +394,19 @@ int main(int argc, char *argv[])
             }
         }
 
+#ifdef DEBUG_MODE
+        for(unsigned int i = 0; i <cars.size(); i++)
+        {
+        	rectangle(image, cars[i].bigRectangle, cars[i].color);
+        }
+#endif
+
+
         // Drawing tracked object
         for(unsigned int i = 0; i <cars.size(); i++)
         {
-            //if (cars[i].time < MIN_TIME)
-            //ellipse(image, cars[i].rect, cars[i].color, 2, CV_AA);
+            if (cars[i].time < MIN_TIME)
+            	ellipse(image, cars[i].rect, cars[i].color, 2, CV_AA);
 
             Point2f vertices[4];
             cars[i].rect.points(vertices);
@@ -335,9 +415,10 @@ int main(int argc, char *argv[])
                 line(image, vertices[k], vertices[(k+1)%4], cars[i].color, 2);
             }
 
-
             cars[i].time += 1;
             cars[i].carCenter.push_back(cars[i].rect.center);
+
+            cout << cars[i].rect.center << endl;
             if (cars[i].time > MIN_TIME)
             {
                 //Removes a car from the cars vector if it has not moved in the last MIN_TIME frames.
@@ -347,6 +428,7 @@ int main(int argc, char *argv[])
                     cars.erase(cars.begin()+i);
                 }
             }
+            /*
             else {
                 if (isKalamanOn) {
                     Mat_<float> measurement(2,1);
@@ -355,14 +437,12 @@ int main(int argc, char *argv[])
                     measurement(1) = cars[i].rect.center.y;
                     Mat prediction = cars[i].kalman->predict();
                     Mat estimated  = cars[i].kalman->correct(measurement);
-
-                    for (int j = 0; j <cars[i].carCenter.size()-1; j++) 
-                        line(image, cars[i].carCenter[j], cars[i].carCenter[j+1], cars[i].color, 1);
                 }
             }
+			*/
 
         }
-        
+ 
         /*
          * Draw parking zone
          */
