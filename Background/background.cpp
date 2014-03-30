@@ -216,11 +216,12 @@ bool isInteger(const string & str){
 
 int main(int argc, char *argv[])
 {
-	if (argc < 1)
+	if (argc < 2)
 	{
 		cout << "Usage: " << argv[0] << " source" << endl;
-		cout << "\t where source is a 0 ... n for cameras" << endl;
-		cout << "\t OR source is a path/to/video." << endl;
+		cout << "\t  - where source is a 0 ... n for cameras" << endl;
+		cout << "\t  - OR source is a path/to/video." << endl;
+		exit(-1);
 	}
 
     RNG rng(12345);
